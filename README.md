@@ -31,5 +31,3 @@ This project will guide you through building a full-stack e-commerce web applica
 This project will help you master the full-stack development process, from database to frontend, with a focus on scalability and user interaction.
 
 
-
-### *Milestone 2 : Project Setup and Login Page*
