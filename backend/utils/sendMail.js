@@ -12,8 +12,10 @@ const sendMail = async (options) => {
                 pass: process.env.SMTP_PASSWORD,
             },
         });
+
+        // Additional logic for sending email can be added here
     } catch (error) {
-        console.error('Error sending email:', error);
+        console.error("Error sending email:", error);
     }
 };
 

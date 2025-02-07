@@ -124,3 +124,9 @@ Additionally, I explored optional features like creating admin roles for restric
 Welcome to Milestone 11! 🌟
 
 In this milestone, we learned how to display products dynamically on the home page using data stored in MongoDB. We built an endpoint to fetch all the products and a frontend function to display them using a product card component.
+
+# Milestone 12 - My Products Page
+
+Welcome to Milestone 12! 🌟
+
+In this milestone, we will build a "My Products" page that will display all the products added by a specific user. We will write an endpoint to filter products based on the user's email and send that data to the frontend. The data will be fetched dynamically and displayed using the Product Card component created earlier.
