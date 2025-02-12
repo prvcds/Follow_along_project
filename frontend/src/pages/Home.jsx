@@ -1,36 +1,36 @@
 import React, { useEffect, useState } from "react";
 import Product from "../Components/auth/Product";
 export default function Home() {
-  const [products, setProducts] = useState([]);
-  const [loading, setLoading] = useState(true); // For loading state
-  const [error, setError] = useState(null); // For error handling
+const [products, setProducts] = useState([]);
+const [loading, setLoading] = useState(true); // For loading state
+const [error, setError] = useState(null); // For error handling
 
-  useEffect(() => {
-    fetch("http://localhost:8000/api/v2/product/get-products")
-      .then((res) => {
-        if (!res.ok) {
-          throw new Error(`HTTP error! status: ${res.status}`);
-        }
-        return res.json();
-      })
-      .then((data) => {
-        setProducts(data.products);
-        setLoading(false);
-      })
-      .catch((err) => {
-        console.error("❌ Error fetching products:", err);
-        setError(err.message);
-        setLoading(false);
-      });
-  }, []);
-  if (loading) {
-    return (
-      <div className="text-center text-white mt-10">Loading products...</div>
-    );
-  }
-  if (error) {
-    return <div className="text-center text-red-500 mt-10">Error: {error}</div>;
-  }
+useEffect(() => {
+  fetch("http://localhost:8000/api/v2/product/get-products")
+    .then((res) => {
+      if (!res.ok) {
+        throw new Error(`HTTP error! status: ${res.status}`);
+      }
+      return res.json();
+    })
+    .then((data) => {
+      setProducts(data.products);
+      setLoading(false);
+    })
+    .catch((err) => {
+      console.error("❌ Error fetching products:", err);
+      setError(err.message);
+      setLoading(false);
+    });
+}, []);
+if (loading) {
+  return (
+    <div className="text-center text-white mt-10">Loading products...</div>
+  );
+}
+if (error) {
+  return <div className="text-center text-red-500 mt-10">Error: {error}</div>;
+}
 
   return (
     <div className="w-full min-h-screen bg-neutral-800">
@@ -43,3 +43,4 @@ export default function Home() {
     </div>
   );
 }
+

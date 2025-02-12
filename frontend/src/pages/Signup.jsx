@@ -1,6 +1,6 @@
-// import React from 'react'
-import Signup from "../component/auth/Signup"
-function SignupPage() {
+import React from 'react'
+import Signup from '../components/auth/signup'
+function SignupPage(){
     return (
         <div>
             <Signup/>
