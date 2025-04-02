@@ -5,6 +5,7 @@ const User = require("../model/user");
 const router = express.Router();
 const { pupload } = require("../multer");
 const path = require('path');
+const { isAuthenticatedUser } = require('../middleware/auth');
 
 const validateProductData = (data) => {
   const errors = [];
@@ -19,7 +20,7 @@ const validateProductData = (data) => {
   return errors;
 };
 router.post(
-  "/create-product",
+  "/create-product", isAuthenticatedUser, 
   pupload.array("images", 10),
   async (req, res) => {
     console.log("🛒 Creating product");
@@ -94,10 +95,11 @@ router.get("/get-products", async (req, res) => {
   }
 });
 
-router.get('/my-products', async (req, res) => {
+router.get('/my-products',  isAuthenticatedUser, async (req, res) => {
   const { email } = req.query;
   try {
       const products = await Product.find({ email });
+      console.log("Product: ", products);
       const productsWithFullImageUrl = products.map(product => {
           if (product.images && product.images.length > 0) {
               product.images = product.images.map(imagePath => {
@@ -114,24 +116,23 @@ router.get('/my-products', async (req, res) => {
 }
 );
 
-router.get('/product/:id', async (req, res) => {
-  const{id} = req.params;
-  try{
-    const product = await Product.findById(id);
-    if(!product) {
-      return res.status(404).json({ error: 'Product not found'})
-    }
-    res.status(200).json({product});
-  }catch (err){
-    console.error('Server error:', err);
-    res.status(500).json({error: 'server error could not fetch the product.'});
+router.get('/product/:id', isAuthenticatedUser, async (req, res) => {
+  console.log("Fetching products...");
+  const { id } = req.params;
+  try {
+      const product = await Product.findById(id);
+      console.log("Product: ", product);
+      if (!product) {
+          return res.status(404).json({ error: 'Product not found.' });
+      }
+      res.status(200).json({ product });
+  } catch (err) {
+      console.error('Server error:', err);
+      res.status(500).json({ error: 'Server error. Could not fetch product.' });
   }
 });
 
-
-
-
-router.put('/update-product/:id', pupload.array('images', 10), async (req, res) => {
+router.put('/update-product/:id', isAuthenticatedUser, pupload.array('images', 10), async (req, res) => {
   const { id } = req.params;
   const { name, description, category, tags, price, stock, email } = req.body;
   try {
@@ -175,7 +176,7 @@ router.put('/update-product/:id', pupload.array('images', 10), async (req, res) 
   }
 });
 
-router.delete('/delete-product/:id', async (req, res) => {
+router.delete('/delete-product/:id', isAuthenticatedUser, async (req, res) => {
   const { id } = req.params;
   try {
       const existingProduct = await Product.findById(id);
@@ -187,6 +188,97 @@ router.delete('/delete-product/:id', async (req, res) => {
   } catch (err) {
       console.error('Server error:', err);
       res.status(500).json({ error: 'Server error. Could not delete product.' });
+  }
+});
+
+router.post('/cart', isAuthenticatedUser, async (req, res) => {
+  try {
+      const { userId, productId, quantity } = req.body;
+      const email = userId;
+      if (!email) {
+          return res.status(400).json({ message: 'Email is required' });
+      }
+      if (!mongoose.Types.ObjectId.isValid(productId)) {
+          return res.status(400).json({ message: 'Invalid productId' });
+      }
+      if (!quantity || quantity < 1) {
+          return res.status(400).json({ message: 'Quantity must be at least 1' });
+      }
+      const user = await User.findOne({ email });
+      if (!user) {
+          return res.status(404).json({ message: 'User not found' });
+      }
+      const product = await Product.findById(productId);
+      if (!product) {
+          return res.status(404).json({ message: 'Product not found' });
+      }
+      const cartItemIndex = user.cart.findIndex(
+          (item) => item.productId.toString() === productId
+      );
+      if (cartItemIndex > -1) {
+          user.cart[cartItemIndex].quantity += quantity;
+      } else {
+          user.cart.push({ productId, quantity });
+      }
+      await user.save();
+      res.status(200).json({
+          message: 'Cart updated successfully',
+          cart: user.cart,
+      });
+  } catch (error) {
+      console.error(error);
+      res.status(500).json({ message: 'Server Error' });
+  }
+});
+
+// GET cart details endpoint
+router.get('/cartproducts', isAuthenticatedUser, async (req, res) => {
+  try {
+      const { email } = req.query;
+      if (!email) {
+          return res.status(400).json({ error: 'Email query parameter is required' });
+      }
+      const user = await User.findOne({ email }).populate({
+          path: 'cart.productId',
+          model: 'Product'
+      });
+      if (!user) {
+          return res.status(404).json({ error: 'User not found' });
+      }
+      res.status(200).json({
+          message: 'Cart retrieved successfully',
+          cart: user.cart
+      });
+  } catch (err) {
+      console.error('Server error:', err);
+      res.status(500).json({ error: 'Server Error' });
+  }
+});
+
+router.put('/cartproduct/quantity', isAuthenticatedUser, async (req, res) => {
+  const { email, productId, quantity } = req.body;
+  console.log("Updating cart product quantity");
+  if (!email || !productId || quantity === undefined) {
+      return res.status(400).json({ error: 'Email, productId, and quantity are required' });
+  }
+  try {
+      const user = await User.findOne({ email });
+      if (!user) {
+          return res.status(404).json({ error: 'User not found' });
+      }
+      const cartProduct = user.cart.find(item => item.productId.toString() === productId);
+      if (!cartProduct) {
+          return res.status(404).json({ error: 'Product not found in cart' });
+      }
+      cartProduct.quantity = quantity;
+      await user.save();
+      res.status(200).json({
+          message: 'Cart product quantity updated successfully',
+          cart: user.cart
+      });
+  } catch (err) {
+      console.error('Server error:', err);
+      res.status(500).json({ error: 'Server Error' });
   }
 });
 

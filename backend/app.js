@@ -6,10 +6,16 @@ const bodyParser = require("body-parser");
 const cors = require("cors");
 const product= require('./controller/product')
 const path=require('path')
+const orders = require('./controller/orders');
+
+const corsOptions = {
+    origin: ['http://localhost:5173', 'http://localhost:5178' ],// Allow only your frontend origin
+    credentials: true, // Allow cookies and credentials
+  };
 
 app.use(express.json());
 app.use(cookieParser());
-app.use(cors());
+app.use(cors(corsOptions));
 app.use("/",express.static("uploads"));
 app.use(bodyParser.urlencoded({ extended: true, limit: "50mb" }));
 
@@ -20,12 +26,21 @@ if (process.env.NODE_ENV !== "PRODUCTION") {
         path: "backend/config/.env",
     });
 };
+// Serve static files for uploads and products
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+app.use('/products', express.static(path.join(__dirname, 'products')));
+
 //import Routes
 const user = require("./controller/user");
 app.use("/api/v2/user", user);
 app.use("/api/v2/product", product);
-// Serve static files for uploads and products
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
-app.use('/products', express.static(path.join(__dirname, 'products')));
+app.use("/api/v2/orders", orders);
+app.use(express.json()); // Ensure JSON requests are processed
+
+app.post("/api/v2/user/create-user", (req, res) => {
+    res.status(201).json({ message: "User created successfully!" });
+});
+
+
 app.use(ErrorHandler);
 module.exports= app;
